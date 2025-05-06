@@ -10,10 +10,6 @@ A modern Android application that allows users to select videos from their devic
 - **Modern UI**: Built with Material 3 and Jetpack Compose for a beautiful, responsive interface
 - **Permission Handling**: Runtime permission handling for accessing media files on all Android versions
 
-## Screenshots
-
-*[Add screenshots of your application here]*
-
 ## Technology Stack
 
 - **Language**: Kotlin
@@ -46,7 +42,7 @@ The trimming is performed on a background thread to keep the UI responsive, and 
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/trimVideo.git
+   git clone https://github.com/ddsakura/trimVideo.git
    ```
 
 2. Open the project in Android Studio
