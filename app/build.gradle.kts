@@ -50,9 +50,10 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     
-    // ExoPlayer dependencies for video playback
-    implementation(libs.exoplayer.core)
-    implementation(libs.exoplayer.ui)
+    // Media3 dependencies for video playback (replacing ExoPlayer)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.common)
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
