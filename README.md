@@ -88,6 +88,4 @@ The `trimMp4Video` function:
 - [Jetpack Compose](https://developer.android.com/jetpack/compose) for the modern UI toolkit
 - [Material 3](https://m3.material.io/) for the design system
 
----
 
-*Built with ❤️ by [Your Name]*
