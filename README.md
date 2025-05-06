@@ -6,7 +6,7 @@ A modern Android application that allows users to select videos from their devic
 
 - **Video Selection**: Select videos from your device using the native Android file picker
 - **Automatic Trimming**: Automatically trim selected videos to 30 seconds
-- **Video Playback**: Play trimmed videos with ExoPlayer integration
+- **Video Playback**: Play trimmed videos with Jetpack Media3 integration
 - **Modern UI**: Built with Material 3 and Jetpack Compose for a beautiful, responsive interface
 - **Permission Handling**: Runtime permission handling for accessing media files on all Android versions
 
@@ -15,7 +15,7 @@ A modern Android application that allows users to select videos from their devic
 - **Language**: Kotlin
 - **UI Framework**: Jetpack Compose with Material 3
 - **Media Processing**: Android MediaExtractor, MediaMuxer, and MediaCodec APIs
-- **Video Playback**: ExoPlayer
+- **Video Playback**: Jetpack Media3
 - **Minimum SDK**: 24 (Android 7.0 Nougat)
 - **Target SDK**: 36 (Android 15)
 
@@ -26,7 +26,7 @@ The app uses Android's native media processing APIs to trim videos efficiently:
 1. **MediaExtractor** extracts media data from the input source
 2. **MediaMuxer** creates a new MP4 file for the output
 3. **MediaCodec** handling for proper buffer processing
-4. **ExoPlayer** for smooth playback of the trimmed video
+4. **Media3** for smooth playback of the trimmed video
 
 The trimming is performed on a background thread to keep the UI responsive, and the app provides feedback during the process through a loading indicator and toast messages.
 
@@ -66,7 +66,7 @@ All trimmed videos are stored in the app's private storage directory and can be 
 ### Key Components
 
 - **MainActivity**: Entry point of the application, handles permissions and video selection
-- **VideoTrimmerScreen**: Compose UI component for displaying the video player and controls
+- **VideoTrimmerScreen**: Compose UI component for displaying the video player and controls using Media3's PlayerView
 - **VideoUtils**: Utility class containing the core video trimming functionality
 
 ### The Trimming Process
@@ -84,7 +84,7 @@ The `trimMp4Video` function:
 
 ## Acknowledgments
 
-- [ExoPlayer](https://github.com/google/ExoPlayer) for video playback
+- [Jetpack Media3](https://developer.android.com/jetpack/androidx/releases/media3) for video playback
 - [Jetpack Compose](https://developer.android.com/jetpack/compose) for the modern UI toolkit
 - [Material 3](https://m3.material.io/) for the design system
 
