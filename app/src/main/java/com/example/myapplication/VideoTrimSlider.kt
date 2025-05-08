@@ -1,7 +1,6 @@
 package com.example.myapplication
 
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,26 +34,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
-import kotlin.math.min
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.graphics.createBitmap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import kotlin.math.max
+import kotlin.math.min
 
-/**
- * 视频裁剪滑块组件，允许用户通过拖动滑块来选择视频裁剪的开始和结束时间
- * 
- * @param thumbnails 视频缩略图列表
- * @param isLoadingThumbnails 缩略图是否正在加载
- * @param videoDurationMs 视频总时长 (毫秒)
- * @param maxTrimDurationMs 最大允许的裁剪时长 (毫秒)
- * @param currentPositionMs 当前播放位置 (毫秒)
- * @param trimStartMs 裁剪起始时间 (毫秒)
- * @param trimEndMs 裁剪结束时间 (毫秒)
- * @param onTrimStartChanged 裁剪起始时间变化的回调
- * @param onTrimEndChanged 裁剪结束时间变化的回调
- */
 @Composable
 fun VideoTrimSlider(
     thumbnails: List<Bitmap>,
@@ -69,31 +56,31 @@ fun VideoTrimSlider(
     val density = LocalDensity.current
     val sliderHeight = 80.dp
 
-    // 使用单独的状态用于拖动操作，避免与播放器更新干扰
+    val currentTrimStartMs by rememberUpdatedState(trimStartMs)
+    val currentTrimEndMs by rememberUpdatedState(trimEndMs)
+    val currentMaxTrimDurationMs by rememberUpdatedState(maxTrimDurationMs)
+
     var sliderWidthPx by remember { mutableStateOf(0f) }
-    var isDragging by remember { mutableStateOf(false) }
 
     Box(
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(sliderHeight + 40.dp)
-                .padding(horizontal = 8.dp),
+        Modifier
+            .fillMaxWidth()
+            .height(sliderHeight + 40.dp)
+            .padding(horizontal = 8.dp),
     ) {
-        // 缩略图背景
         Box(
             modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(sliderHeight)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .onSizeChanged { size ->
-                        sliderWidthPx = size.width.toFloat()
-                    },
+            Modifier
+                .fillMaxWidth()
+                .height(sliderHeight)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .onSizeChanged { size ->
+                    sliderWidthPx = size.width.toFloat()
+                },
             contentAlignment = Alignment.Center,
         ) {
-            // 缩略图行或加载指示器
             if (isLoadingThumbnails) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             } else {
@@ -103,69 +90,64 @@ fun VideoTrimSlider(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = null,
                             modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight(),
+                            Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
                             contentScale = ContentScale.Crop,
                         )
                     }
                 }
             }
 
-            // 选择叠加层 - 显示在缩略图上方
             if (videoDurationMs > 0 && sliderWidthPx > 0) {
-                val startRatio = trimStartMs.toFloat() / videoDurationMs
-                val endRatio = trimEndMs.toFloat() / videoDurationMs
+                val startRatio = currentTrimStartMs.toFloat() / videoDurationMs
+                val endRatio = currentTrimEndMs.toFloat() / videoDurationMs
 
-                // 左侧暗区
+                // Left dimmed overlay
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .width(with(density) { (startRatio * sliderWidthPx).toDp() })
-                        .background(Color.Black.copy(alpha = 1f))
+                        .background(Color.Black.copy(alpha = 0.6f))
                         .align(Alignment.CenterStart)
                 )
 
-                // 右侧暗区
+                // Right dimmed overlay
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .width(with(density) { ((1 - endRatio) * sliderWidthPx).toDp() })
-                        .background(Color.Black.copy(alpha = 1f))
+                        .background(Color.Black.copy(alpha = 0.6f))
                         .align(Alignment.CenterEnd)
                 )
 
-                // 左侧手柄 - 改进版，更容易拖动
+                // Left Handle
                 Box(
                     modifier = Modifier
                         .offset(x = with(density) { (startRatio * sliderWidthPx).toDp() - 20.dp })
-                        .width(40.dp) // 更宽的触摸区域
+                        .width(40.dp)
                         .fillMaxHeight()
-                        .background(Color.Red.copy(alpha = 0f)) // 调试时可设为半透明查看触摸区域
+                        .background(Color.Transparent)
                         .align(Alignment.CenterStart)
-                        .pointerInput(Unit) {
+                        .pointerInput(videoDurationMs, sliderWidthPx) {
                             detectDragGestures(
-                                onDragStart = { isDragging = true },
-                                onDragEnd = { isDragging = false },
-                                onDragCancel = { isDragging = false },
                                 onDrag = { change, dragAmount ->
                                     change.consume()
+                                    if (sliderWidthPx == 0f) return@detectDragGestures
 
                                     val dragRatio = dragAmount.x / sliderWidthPx
                                     val dragMs = (dragRatio * videoDurationMs).toLong()
 
-                                    // 计算新位置，同时尊重限制
-                                    val newStartMs = (trimStartMs + dragMs).coerceIn(
-                                        0L, // 不能低于0
-                                        trimEndMs - 2000L // 最小2秒间隔
+                                    val newStartMs = (currentTrimStartMs + dragMs).coerceIn(
+                                        0L,
+                                        (currentTrimEndMs - MIN_TRIM_DURATION_MS).coerceAtLeast(0L)
                                     )
-
                                     onTrimStartChanged(newStartMs)
                                 }
                             )
                         }
                 ) {
-                    // 手柄的可见部分
+                    // Visible part of the handle
                     Box(
                         modifier = Modifier
                             .width(8.dp)
@@ -173,8 +155,6 @@ fun VideoTrimSlider(
                             .background(Color.White)
                             .align(Alignment.Center)
                     )
-
-                    // 手柄圆形指示器
                     Box(
                         modifier = Modifier
                             .size(20.dp)
@@ -183,47 +163,38 @@ fun VideoTrimSlider(
                     )
                 }
 
-                // 右侧手柄 - 改进版，更容易拖动
+                // Right Handle
                 Box(
                     modifier = Modifier
                         .offset(with(density) { -((1 - endRatio) * sliderWidthPx).toDp() + 20.dp })
-                        //.offset(x = with(density) { (endRatio * sliderWidthPx).toDp() - 0.dp })
-                        .width(40.dp) // 更宽的触摸区域
+                        .width(40.dp)
                         .fillMaxHeight()
-                        .background(Color.Red.copy(alpha = 0.0f)) // 调试时可设为半透明查看触摸区域
+                        .background(Color.Transparent)
                         .align(Alignment.CenterEnd)
-                        .pointerInput(Unit) {
+                        .pointerInput(videoDurationMs, sliderWidthPx) {
                             detectDragGestures(
-                                onDragStart = { isDragging = true },
-                                onDragEnd = { isDragging = false },
-                                onDragCancel = { isDragging = false },
                                 onDrag = { change, dragAmount ->
                                     change.consume()
+                                    if (sliderWidthPx == 0f) return@detectDragGestures
 
                                     val dragRatio = dragAmount.x / sliderWidthPx
                                     val dragMs = (dragRatio * videoDurationMs).toLong()
-                                    Log.d("dragMs", "dragMs: $dragMs")
 
-                                    // 计算最大允许结束时间
-                                    val maxAllowedEndMs = min(
-                                        videoDurationMs,
-                                        trimStartMs + maxTrimDurationMs
+                                    val maxAllowedEndBasedOnTrimStart = currentTrimStartMs + currentMaxTrimDurationMs
+                                    val absoluteMaxEnd = videoDurationMs
+                                    
+                                    val actualMaxAllowedEndMs = min(maxAllowedEndBasedOnTrimStart, absoluteMaxEnd)
+
+                                    val newEndMs = (currentTrimEndMs + dragMs).coerceIn(
+                                        (currentTrimStartMs + MIN_TRIM_DURATION_MS).coerceAtMost(videoDurationMs),
+                                        actualMaxAllowedEndMs
                                     )
-
-                                    // 计算新位置，同时尊重限制
-                                    val newEndMs = (trimEndMs + dragMs).coerceIn(
-                                        trimStartMs, // 最小2秒间隔
-                                        maxAllowedEndMs
-                                    )
-
-                                    Log.d("newEndMs", "newEndMs: $newEndMs")
-
                                     onTrimEndChanged(newEndMs)
                                 }
                             )
                         }
                 ) {
-                    // 手柄的可见部分
+                    // Visible part of the handle
                     Box(
                         modifier = Modifier
                             .width(8.dp)
@@ -231,8 +202,6 @@ fun VideoTrimSlider(
                             .background(Color.White)
                             .align(Alignment.Center)
                     )
-
-                    // 手柄圆形指示器
                     Box(
                         modifier = Modifier
                             .size(20.dp)
@@ -241,7 +210,7 @@ fun VideoTrimSlider(
                     )
                 }
 
-                // 选择区域边框
+                // Selected region border
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
@@ -251,45 +220,53 @@ fun VideoTrimSlider(
                         .align(Alignment.CenterStart)
                 )
 
-                // 位置指示器
-                if (currentPositionMs in trimStartMs..trimEndMs) {
-                    val positionRatio = currentPositionMs.toFloat() / videoDurationMs
-                    Box(
-                        modifier = Modifier
-                            .width(3.dp)
-                            .fillMaxHeight()
-                            .background(Color.Red)
-                            .offset(x = with(density) { (positionRatio * sliderWidthPx).toDp() - 1.5.dp })
-                    )
+                // Current position indicator
+                if (currentPositionMs >= currentTrimStartMs && currentPositionMs <= currentTrimEndMs) {
+                    val effectiveDurationForPosition = currentTrimEndMs - currentTrimStartMs
+                    if (effectiveDurationForPosition > 0) {
+                        val positionInTrimWindowMs = currentPositionMs - currentTrimStartMs
+                        val positionRatioInTrimWindow = positionInTrimWindowMs.toFloat() / effectiveDurationForPosition
+                        
+                        val selectedWindowWidthPx = (endRatio - startRatio) * sliderWidthPx
+                        val indicatorOffsetXPx = startRatio * sliderWidthPx + positionRatioInTrimWindow * selectedWindowWidthPx
+
+                        Box(
+                            modifier = Modifier
+                                .width(3.dp)
+                                .fillMaxHeight()
+                                .background(Color.Yellow)
+                                .offset(x = with(density) { indicatorOffsetXPx.toDp() - 1.5.dp })
+                                .align(Alignment.CenterStart)
+                        )
+                    }
                 }
             }
         }
 
-        // 时长指示器和最大限制
+        // Duration indicators
         Box(
             modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(top = 8.dp),
+            Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(top = 8.dp),
         ) {
-            // 最大时长指示器
-            if (maxTrimDurationMs < videoDurationMs) {
+            if (maxTrimDurationMs < videoDurationMs && sliderWidthPx > 0) {
                 val maxDurationRatio = maxTrimDurationMs.toFloat() / videoDurationMs
                 Box(
                     modifier =
-                        Modifier
-                            .width(with(density) { (maxDurationRatio * sliderWidthPx).toDp() })
-                            .height(4.dp)
-                            .background(Color.Blue, RoundedCornerShape(2.dp)),
+                    Modifier
+                        .width(with(density) { (maxDurationRatio * sliderWidthPx).toDp() })
+                        .height(4.dp)
+                        .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(2.dp))
+                        .align(Alignment.CenterStart),
                 )
             }
 
-            // 时长标签
             Text(
-                text = "Selected: ${formatDuration(trimEndMs - trimStartMs)}",
+                text = "Selected: ${formatDuration(currentTrimEndMs - currentTrimStartMs)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Blue,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.align(Alignment.CenterStart),
             )
 
@@ -297,7 +274,7 @@ fun VideoTrimSlider(
                 Text(
                     text = "Max: ${formatDuration(maxTrimDurationMs)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Blue,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.align(Alignment.CenterEnd),
                 )
             }
@@ -305,53 +282,44 @@ fun VideoTrimSlider(
     }
 }
 
-// 辅助函数，格式化时长
-fun formatDuration(durationMs: Long): String {
-    val minutes = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(durationMs)
-    val seconds = java.util.concurrent.TimeUnit.MILLISECONDS.toSeconds(durationMs) % 60
-    return String.format("%02d:%02d", minutes, seconds)
+fun formatDuration(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    val milliseconds = (ms % 1000) / 10
+    return String.format("%02d:%02d.%01d", minutes, seconds, milliseconds)
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF0F0F0)
 @Composable
 fun VideoTrimSliderPreview() {
-    // 创建模拟的缩略图列表
     val context = LocalContext.current
     val thumbnails = remember {
         List(8) { index ->
-            // 创建简单的纯色Bitmap作为示例
             val color = when (index % 4) {
                 0 -> android.graphics.Color.RED
                 1 -> android.graphics.Color.GREEN
                 2 -> android.graphics.Color.BLUE
                 else -> android.graphics.Color.YELLOW
             }
-            
-            val bitmap = createBitmap(120, 80)
+            val bitmap = Bitmap.createBitmap(120, 80, Bitmap.Config.ARGB_8888)
             val canvas = android.graphics.Canvas(bitmap)
             canvas.drawColor(color)
             bitmap
         }
     }
 
-    // 模拟视频参数
-    val videoDurationMs = 60000L // 1分钟视频
-    val maxTrimDurationMs = 30000L // 最大裁剪长度为30秒
-    val currentPositionMs = 15000L // 当前播放位置
-    val trimStartMs = 10000L // 裁剪开始时间
-    val trimEndMs = 30000L // 裁剪结束时间
-
     MaterialTheme {
         VideoTrimSlider(
             thumbnails = thumbnails,
             isLoadingThumbnails = false,
-            videoDurationMs = videoDurationMs,
-            maxTrimDurationMs = maxTrimDurationMs,
-            currentPositionMs = currentPositionMs,
-            trimStartMs = trimStartMs,
-            trimEndMs = trimEndMs,
-            onTrimStartChanged = { /* 预览中无需实现 */ },
-            onTrimEndChanged = { /* 预览中无需实现 */ }
+            videoDurationMs = 60000L,
+            maxTrimDurationMs = 30000L,
+            currentPositionMs = 15000L,
+            trimStartMs = 10000L,
+            trimEndMs = 25000L,
+            onTrimStartChanged = {},
+            onTrimEndChanged = {}
         )
     }
 }
@@ -368,8 +336,8 @@ fun VideoTrimSliderLoadingPreview() {
             currentPositionMs = 0L,
             trimStartMs = 0L,
             trimEndMs = 30000L,
-            onTrimStartChanged = { /* 预览中无需实现 */ },
-            onTrimEndChanged = { /* 预览中无需实现 */ }
+            onTrimStartChanged = {},
+            onTrimEndChanged = {}
         )
     }
 }
