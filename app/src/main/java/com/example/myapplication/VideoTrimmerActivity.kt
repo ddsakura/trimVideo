@@ -109,11 +109,12 @@ class VideoTrimmerActivity : ComponentActivity() {
                         if (endMs - startMs >= MIN_TRIM_DURATION_MS) {
                             trimVideo(startMs, endMs)
                         } else {
-                            Toast.makeText(
-                                this,
-                                "Selected duration must be at least ${MIN_TRIM_DURATION_MS / 1000} second(s)",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast
+                                .makeText(
+                                    this,
+                                    "Selected duration must be at least ${MIN_TRIM_DURATION_MS / 1000} second(s)",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
                         }
                     },
                     onClose = { finish() },
@@ -261,11 +262,12 @@ fun VideoTrimmerScreen(
                             if (trimEndMs - trimStartMs >= MIN_TRIM_DURATION_MS) {
                                 onTrimVideo(trimStartMs, trimEndMs)
                             } else {
-                                Toast.makeText(
-                                    context,
-                                    "Selected duration must be at least ${MIN_TRIM_DURATION_MS / 1000} second(s)",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "Selected duration must be at least ${MIN_TRIM_DURATION_MS / 1000} second(s)",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
                             }
                         },
                     ) {
@@ -451,11 +453,12 @@ fun VideoTrimmerScreen(
                     if (trimEndMs - trimStartMs >= MIN_TRIM_DURATION_MS) {
                         onTrimVideo(trimStartMs, trimEndMs)
                     } else {
-                        Toast.makeText(
-                            context,
-                            "Selected duration must be at least ${MIN_TRIM_DURATION_MS / 1000} second(s)",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast
+                            .makeText(
+                                context,
+                                "Selected duration must be at least ${MIN_TRIM_DURATION_MS / 1000} second(s)",
+                                Toast.LENGTH_SHORT,
+                            ).show()
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

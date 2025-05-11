@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlin.math.max
 import kotlin.math.min
 
 @Composable
@@ -64,21 +63,21 @@ fun VideoTrimSlider(
 
     Box(
         modifier =
-        Modifier
-            .fillMaxWidth()
-            .height(sliderHeight + 40.dp)
-            .padding(horizontal = 8.dp),
+            Modifier
+                .fillMaxWidth()
+                .height(sliderHeight + 40.dp)
+                .padding(horizontal = 8.dp),
     ) {
         Box(
             modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(sliderHeight)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .onSizeChanged { size ->
-                    sliderWidthPx = size.width.toFloat()
-                },
+                Modifier
+                    .fillMaxWidth()
+                    .height(sliderHeight)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .onSizeChanged { size ->
+                        sliderWidthPx = size.width.toFloat()
+                    },
             contentAlignment = Alignment.Center,
         ) {
             if (isLoadingThumbnails) {
@@ -90,9 +89,9 @@ fun VideoTrimSlider(
                             bitmap = bitmap.asImageBitmap(),
                             contentDescription = null,
                             modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
+                                Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
                             contentScale = ContentScale.Crop,
                         )
                     }
@@ -105,119 +104,136 @@ fun VideoTrimSlider(
 
                 // Left dimmed overlay
                 Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(with(density) { (startRatio * sliderWidthPx).toDp() })
-                        .background(Color.Black.copy(alpha = 0.6f))
-                        .align(Alignment.CenterStart)
+                    modifier =
+                        Modifier
+                            .fillMaxHeight()
+                            .width(with(density) { (startRatio * sliderWidthPx).toDp() })
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .align(Alignment.CenterStart),
                 )
 
                 // Right dimmed overlay
                 Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(with(density) { ((1 - endRatio) * sliderWidthPx).toDp() })
-                        .background(Color.Black.copy(alpha = 0.6f))
-                        .align(Alignment.CenterEnd)
+                    modifier =
+                        Modifier
+                            .fillMaxHeight()
+                            .width(with(density) { ((1 - endRatio) * sliderWidthPx).toDp() })
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .align(Alignment.CenterEnd),
                 )
 
                 // Left Handle
                 Box(
-                    modifier = Modifier
-                        .offset(x = with(density) { (startRatio * sliderWidthPx).toDp() - 20.dp })
-                        .width(40.dp)
-                        .fillMaxHeight()
-                        .background(Color.Transparent)
-                        .align(Alignment.CenterStart)
-                        .pointerInput(videoDurationMs, sliderWidthPx) {
-                            detectDragGestures(
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    if (sliderWidthPx == 0f) return@detectDragGestures
+                    modifier =
+                        Modifier
+                            .offset(x = with(density) { (startRatio * sliderWidthPx).toDp() - 20.dp })
+                            .width(40.dp)
+                            .fillMaxHeight()
+                            .background(Color.Transparent)
+                            .align(Alignment.CenterStart)
+                            .pointerInput(videoDurationMs, sliderWidthPx) {
+                                detectDragGestures(
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        if (sliderWidthPx == 0f) return@detectDragGestures
 
-                                    val dragRatio = dragAmount.x / sliderWidthPx
-                                    val dragMs = (dragRatio * videoDurationMs).toLong()
+                                        val dragRatio = dragAmount.x / sliderWidthPx
+                                        val dragMs = (dragRatio * videoDurationMs).toLong()
 
-                                    val newStartMs = (currentTrimStartMs + dragMs).coerceIn(
-                                        0L,
-                                        (currentTrimEndMs - MIN_TRIM_DURATION_MS).coerceAtLeast(0L)
-                                    )
-                                    onTrimStartChanged(newStartMs)
-                                }
-                            )
-                        }
+                                        // Calculate the minimum allowed start position based on the maximum trim duration
+                                        val minAllowedStartBasedOnMaxDuration =
+                                            (currentTrimEndMs - currentMaxTrimDurationMs).coerceAtLeast(
+                                                0L,
+                                            )
+
+                                        val newStartMs =
+                                            (currentTrimStartMs + dragMs).coerceIn(
+                                                minAllowedStartBasedOnMaxDuration,
+                                                (currentTrimEndMs - MIN_TRIM_DURATION_MS).coerceAtLeast(0L),
+                                            )
+                                        onTrimStartChanged(newStartMs)
+                                    },
+                                )
+                            },
                 ) {
                     // Visible part of the handle
                     Box(
-                        modifier = Modifier
-                            .width(8.dp)
-                            .fillMaxHeight()
-                            .background(Color.White)
-                            .align(Alignment.Center)
+                        modifier =
+                            Modifier
+                                .width(8.dp)
+                                .fillMaxHeight()
+                                .background(Color.White)
+                                .align(Alignment.Center),
                     )
                     Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .background(Color.White, CircleShape)
-                            .align(Alignment.Center)
+                        modifier =
+                            Modifier
+                                .size(20.dp)
+                                .background(Color.White, CircleShape)
+                                .align(Alignment.Center),
                     )
                 }
 
                 // Right Handle
                 Box(
-                    modifier = Modifier
-                        .offset(with(density) { -((1 - endRatio) * sliderWidthPx).toDp() + 20.dp })
-                        .width(40.dp)
-                        .fillMaxHeight()
-                        .background(Color.Transparent)
-                        .align(Alignment.CenterEnd)
-                        .pointerInput(videoDurationMs, sliderWidthPx) {
-                            detectDragGestures(
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    if (sliderWidthPx == 0f) return@detectDragGestures
+                    modifier =
+                        Modifier
+                            .offset(with(density) { -((1 - endRatio) * sliderWidthPx).toDp() + 20.dp })
+                            .width(40.dp)
+                            .fillMaxHeight()
+                            .background(Color.Transparent)
+                            .align(Alignment.CenterEnd)
+                            .pointerInput(videoDurationMs, sliderWidthPx) {
+                                detectDragGestures(
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        if (sliderWidthPx == 0f) return@detectDragGestures
 
-                                    val dragRatio = dragAmount.x / sliderWidthPx
-                                    val dragMs = (dragRatio * videoDurationMs).toLong()
+                                        val dragRatio = dragAmount.x / sliderWidthPx
+                                        val dragMs = (dragRatio * videoDurationMs).toLong()
 
-                                    val maxAllowedEndBasedOnTrimStart = currentTrimStartMs + currentMaxTrimDurationMs
-                                    val absoluteMaxEnd = videoDurationMs
-                                    
-                                    val actualMaxAllowedEndMs = min(maxAllowedEndBasedOnTrimStart, absoluteMaxEnd)
+                                        val maxAllowedEndBasedOnTrimStart = currentTrimStartMs + currentMaxTrimDurationMs
+                                        val absoluteMaxEnd = videoDurationMs
 
-                                    val newEndMs = (currentTrimEndMs + dragMs).coerceIn(
-                                        (currentTrimStartMs + MIN_TRIM_DURATION_MS).coerceAtMost(videoDurationMs),
-                                        actualMaxAllowedEndMs
-                                    )
-                                    onTrimEndChanged(newEndMs)
-                                }
-                            )
-                        }
+                                        val actualMaxAllowedEndMs = min(maxAllowedEndBasedOnTrimStart, absoluteMaxEnd)
+
+                                        val newEndMs =
+                                            (currentTrimEndMs + dragMs).coerceIn(
+                                                (currentTrimStartMs + MIN_TRIM_DURATION_MS).coerceAtMost(videoDurationMs),
+                                                actualMaxAllowedEndMs,
+                                            )
+                                        onTrimEndChanged(newEndMs)
+                                    },
+                                )
+                            },
                 ) {
                     // Visible part of the handle
                     Box(
-                        modifier = Modifier
-                            .width(8.dp)
-                            .fillMaxHeight()
-                            .background(Color.White)
-                            .align(Alignment.Center)
+                        modifier =
+                            Modifier
+                                .width(8.dp)
+                                .fillMaxHeight()
+                                .background(Color.White)
+                                .align(Alignment.Center),
                     )
                     Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .background(Color.White, CircleShape)
-                            .align(Alignment.Center)
+                        modifier =
+                            Modifier
+                                .size(20.dp)
+                                .background(Color.White, CircleShape)
+                                .align(Alignment.Center),
                     )
                 }
 
                 // Selected region border
                 Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(with(density) { ((endRatio - startRatio) * sliderWidthPx).toDp() })
-                        .offset(x = with(density) { (startRatio * sliderWidthPx).toDp() })
-                        .border(2.dp, Color.White)
-                        .align(Alignment.CenterStart)
+                    modifier =
+                        Modifier
+                            .fillMaxHeight()
+                            .width(with(density) { ((endRatio - startRatio) * sliderWidthPx).toDp() })
+                            .offset(x = with(density) { (startRatio * sliderWidthPx).toDp() })
+                            .border(2.dp, Color.White)
+                            .align(Alignment.CenterStart),
                 )
 
                 // Current position indicator
@@ -226,17 +242,18 @@ fun VideoTrimSlider(
                     if (effectiveDurationForPosition > 0) {
                         val positionInTrimWindowMs = currentPositionMs - currentTrimStartMs
                         val positionRatioInTrimWindow = positionInTrimWindowMs.toFloat() / effectiveDurationForPosition
-                        
+
                         val selectedWindowWidthPx = (endRatio - startRatio) * sliderWidthPx
                         val indicatorOffsetXPx = startRatio * sliderWidthPx + positionRatioInTrimWindow * selectedWindowWidthPx
 
                         Box(
-                            modifier = Modifier
-                                .width(3.dp)
-                                .fillMaxHeight()
-                                .background(Color.Yellow)
-                                .offset(x = with(density) { indicatorOffsetXPx.toDp() - 1.5.dp })
-                                .align(Alignment.CenterStart)
+                            modifier =
+                                Modifier
+                                    .width(3.dp)
+                                    .fillMaxHeight()
+                                    .background(Color.Yellow)
+                                    .offset(x = with(density) { indicatorOffsetXPx.toDp() - 1.5.dp })
+                                    .align(Alignment.CenterStart),
                         )
                     }
                 }
@@ -246,20 +263,20 @@ fun VideoTrimSlider(
         // Duration indicators
         Box(
             modifier =
-            Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(top = 8.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(top = 8.dp),
         ) {
             if (maxTrimDurationMs < videoDurationMs && sliderWidthPx > 0) {
                 val maxDurationRatio = maxTrimDurationMs.toFloat() / videoDurationMs
                 Box(
                     modifier =
-                    Modifier
-                        .width(with(density) { (maxDurationRatio * sliderWidthPx).toDp() })
-                        .height(4.dp)
-                        .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(2.dp))
-                        .align(Alignment.CenterStart),
+                        Modifier
+                            .width(with(density) { (maxDurationRatio * sliderWidthPx).toDp() })
+                            .height(4.dp)
+                            .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(2.dp))
+                            .align(Alignment.CenterStart),
                 )
             }
 
@@ -294,20 +311,22 @@ fun formatDuration(ms: Long): String {
 @Composable
 fun VideoTrimSliderPreview() {
     val context = LocalContext.current
-    val thumbnails = remember {
-        List(8) { index ->
-            val color = when (index % 4) {
-                0 -> android.graphics.Color.RED
-                1 -> android.graphics.Color.GREEN
-                2 -> android.graphics.Color.BLUE
-                else -> android.graphics.Color.YELLOW
+    val thumbnails =
+        remember {
+            List(8) { index ->
+                val color =
+                    when (index % 4) {
+                        0 -> android.graphics.Color.RED
+                        1 -> android.graphics.Color.GREEN
+                        2 -> android.graphics.Color.BLUE
+                        else -> android.graphics.Color.YELLOW
+                    }
+                val bitmap = Bitmap.createBitmap(120, 80, Bitmap.Config.ARGB_8888)
+                val canvas = android.graphics.Canvas(bitmap)
+                canvas.drawColor(color)
+                bitmap
             }
-            val bitmap = Bitmap.createBitmap(120, 80, Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(bitmap)
-            canvas.drawColor(color)
-            bitmap
         }
-    }
 
     MaterialTheme {
         VideoTrimSlider(
@@ -319,7 +338,7 @@ fun VideoTrimSliderPreview() {
             trimStartMs = 10000L,
             trimEndMs = 25000L,
             onTrimStartChanged = {},
-            onTrimEndChanged = {}
+            onTrimEndChanged = {},
         )
     }
 }
@@ -337,7 +356,7 @@ fun VideoTrimSliderLoadingPreview() {
             trimStartMs = 0L,
             trimEndMs = 30000L,
             onTrimStartChanged = {},
-            onTrimEndChanged = {}
+            onTrimEndChanged = {},
         )
     }
 }
