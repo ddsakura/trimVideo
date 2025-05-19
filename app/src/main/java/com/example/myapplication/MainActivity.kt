@@ -16,7 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,9 +23,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
     // Use MutableState for the trimmed video URI to ensure UI updates
@@ -48,7 +49,7 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 val data = result.data
-                val trimmedUri = data?.getStringExtra("trimmed_video_uri")?.let { Uri.parse(it) }
+                val trimmedUri = data?.getStringExtra("trimmed_video_uri")?.toUri()
                 if (trimmedUri != null) {
                     trimmedVideoUri.value = trimmedUri
                     Toast.makeText(this, "Video trimmed successfully!", Toast.LENGTH_SHORT).show()
@@ -107,17 +108,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     onSelectVideoClick: () -> Unit,
     trimmedVideoUri: Uri?,
 ) {
-    val context = LocalContext.current
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
-
-    // Force recomposition when trimmedVideoUri changes
-    val videoUriKey by rememberUpdatedState(trimmedVideoUri)
 
     Scaffold(
         topBar = {
@@ -182,7 +180,7 @@ fun MainScreen(
 
             // Video Player (only shown when a video has been trimmed)
             if (trimmedVideoUri != null) {
-                Divider(modifier = Modifier.padding(vertical = 16.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
                 Text(
                     "Trimmed Video Result",

@@ -34,11 +34,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import java.util.Locale
 import kotlin.math.min
+import androidx.core.graphics.createBitmap
 
 @Composable
 fun VideoTrimSlider(
@@ -303,14 +304,15 @@ fun formatDuration(ms: Long): String {
     val totalSeconds = ms / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    val milliseconds = (ms % 1000) / 10
-    return String.format("%02d:%02d.%01d", minutes, seconds, milliseconds)
+    val milliseconds = (ms % 1000) / 10 // This gives tenths of a second
+    // Use Locale.US for a consistent format (e.g., "." as decimal separator)
+    // Or use Locale.getDefault() if you want it to adapt to the user's locale
+    return String.format(Locale.US, "%02d:%02d.%01d", minutes, seconds, milliseconds)
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFFF0F0F0)
 @Composable
 fun VideoTrimSliderPreview() {
-    val context = LocalContext.current
     val thumbnails =
         remember {
             List(8) { index ->
@@ -321,7 +323,7 @@ fun VideoTrimSliderPreview() {
                         2 -> android.graphics.Color.BLUE
                         else -> android.graphics.Color.YELLOW
                     }
-                val bitmap = Bitmap.createBitmap(120, 80, Bitmap.Config.ARGB_8888)
+                val bitmap = createBitmap(120, 80)
                 val canvas = android.graphics.Canvas(bitmap)
                 canvas.drawColor(color)
                 bitmap
