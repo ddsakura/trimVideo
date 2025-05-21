@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.min
 import androidx.core.graphics.createBitmap
+import com.example.myapplication.MIN_TRIM_DURATION_MS
 
 @Composable
 fun VideoTrimSlider(
@@ -52,6 +53,7 @@ fun VideoTrimSlider(
     trimEndMs: Long,
     onTrimStartChanged: (Long) -> Unit,
     onTrimEndChanged: (Long) -> Unit,
+    onCurrentPositionChanged: (Long) -> Unit,
 ) {
     val density = LocalDensity.current
     val sliderHeight = 80.dp
@@ -254,7 +256,34 @@ fun VideoTrimSlider(
                                     .fillMaxHeight()
                                     .background(Color.Yellow)
                                     .offset(x = with(density) { indicatorOffsetXPx.toDp() - 1.5.dp })
-                                    .align(Alignment.CenterStart),
+                                    .align(Alignment.CenterStart)
+                                    .pointerInput(
+                                        sliderWidthPx,
+                                        currentTrimStartMs,
+                                        currentTrimEndMs,
+                                        videoDurationMs,
+                                        currentPositionMs,
+                                    ) {
+                                        detectDragGestures { change, dragAmount ->
+                                            change.consume()
+                                            if (sliderWidthPx == 0f) return@detectDragGestures
+
+                                            val effectiveDurationForPosition = currentTrimEndMs - currentTrimStartMs
+                                            if (effectiveDurationForPosition <= 0) return@detectDragGestures
+
+                                            val selectedWindowWidthPx =
+                                                ((currentTrimEndMs - currentTrimStartMs).toFloat() / videoDurationMs) * sliderWidthPx
+                                            if (selectedWindowWidthPx == 0f) return@detectDragGestures
+
+                                            val dragMsInSelectedWindow =
+                                                (dragAmount.x / selectedWindowWidthPx * effectiveDurationForPosition).toLong()
+
+                                            val newPositionMs = currentPositionMs + dragMsInSelectedWindow
+                                            val clampedNewPositionMs =
+                                                newPositionMs.coerceIn(currentTrimStartMs, currentTrimEndMs)
+                                            onCurrentPositionChanged(clampedNewPositionMs)
+                                        }
+                                    },
                         )
                     }
                 }
@@ -341,6 +370,7 @@ fun VideoTrimSliderPreview() {
             trimEndMs = 25000L,
             onTrimStartChanged = {},
             onTrimEndChanged = {},
+            onCurrentPositionChanged = {},
         )
     }
 }
@@ -359,6 +389,7 @@ fun VideoTrimSliderLoadingPreview() {
             trimEndMs = 30000L,
             onTrimStartChanged = {},
             onTrimEndChanged = {},
+            onCurrentPositionChanged = {},
         )
     }
 }
