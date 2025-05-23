@@ -67,7 +67,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.min
-import com.example.myapplication.MIN_TRIM_DURATION_MS
 
 class VideoTrimmerActivity : ComponentActivity() {
     private var videoUri: Uri? = null

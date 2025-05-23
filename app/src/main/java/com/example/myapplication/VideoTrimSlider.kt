@@ -37,10 +37,9 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.createBitmap
 import java.util.Locale
 import kotlin.math.min
-import androidx.core.graphics.createBitmap
-import com.example.myapplication.MIN_TRIM_DURATION_MS
 
 @Composable
 fun VideoTrimSlider(
@@ -249,42 +248,68 @@ fun VideoTrimSlider(
                         val selectedWindowWidthPx = (endRatio - startRatio) * sliderWidthPx
                         val indicatorOffsetXPx = startRatio * sliderWidthPx + positionRatioInTrimWindow * selectedWindowWidthPx
 
-                        Box(
+                        Box( // Outer Box (Draggable area)
                             modifier =
                                 Modifier
-                                    .width(3.dp)
                                     .fillMaxHeight()
-                                    .background(Color.Yellow)
-                                    .offset(x = with(density) { indicatorOffsetXPx.toDp() - 1.5.dp })
+                                    .offset(x = with(density) { indicatorOffsetXPx.toDp() - 10.dp }) // Adjusted for new width
+                                    .width(20.dp) // Wider touch target
                                     .align(Alignment.CenterStart)
+                                    // .background(Color.Magenta.copy(alpha = 0.3f)) // For debugging touch area
                                     .pointerInput(
                                         sliderWidthPx,
                                         currentTrimStartMs,
                                         currentTrimEndMs,
                                         videoDurationMs,
-                                        currentPositionMs,
+                                        // currentPositionMs, // Removed as per instruction
+                                        onCurrentPositionChanged,
                                     ) {
-                                        detectDragGestures { change, dragAmount ->
-                                            change.consume()
-                                            if (sliderWidthPx == 0f) return@detectDragGestures
+                                        var positionAtDragStart by mutableStateOf(0L)
+                                        var accumulatedDragMs by mutableStateOf(0L)
 
-                                            val effectiveDurationForPosition = currentTrimEndMs - currentTrimStartMs
-                                            if (effectiveDurationForPosition <= 0) return@detectDragGestures
+                                        detectDragGestures(
+                                            onDragStart = {
+                                                positionAtDragStart = currentPositionMs
+                                                accumulatedDragMs = 0L
+                                            },
+                                            onDrag = { change, _ ->
+                                                // dragAmount is not directly used, using change.position and change.previousPosition
+                                                change.consume()
+                                                if (sliderWidthPx == 0f) return@detectDragGestures
 
-                                            val selectedWindowWidthPx =
-                                                ((currentTrimEndMs - currentTrimStartMs).toFloat() / videoDurationMs) * sliderWidthPx
-                                            if (selectedWindowWidthPx == 0f) return@detectDragGestures
+                                                val effectiveDurationForPosition = currentTrimEndMs - currentTrimStartMs
+                                                if (effectiveDurationForPosition <= 0) return@detectDragGestures
 
-                                            val dragMsInSelectedWindow =
-                                                (dragAmount.x / selectedWindowWidthPx * effectiveDurationForPosition).toLong()
+                                                // Ensure floating point division for selectedWindowWidthPx
+                                                val selectedWindowWidthPx =
+                                                    ((currentTrimEndMs - currentTrimStartMs).toFloat() / videoDurationMs.toFloat()) *
+                                                        sliderWidthPx
+                                                if (selectedWindowWidthPx == 0f) return@detectDragGestures
 
-                                            val newPositionMs = currentPositionMs + dragMsInSelectedWindow
-                                            val clampedNewPositionMs =
-                                                newPositionMs.coerceIn(currentTrimStartMs, currentTrimEndMs)
-                                            onCurrentPositionChanged(clampedNewPositionMs)
-                                        }
+                                                val dragDeltaPx = change.position.x - change.previousPosition.x
+                                                val dragDeltaMs =
+                                                    (dragDeltaPx / selectedWindowWidthPx * effectiveDurationForPosition)
+                                                        .toLong()
+                                                accumulatedDragMs += dragDeltaMs
+
+                                                val newPositionMs = positionAtDragStart + accumulatedDragMs
+                                                val clampedNewPositionMs =
+                                                    newPositionMs.coerceIn(currentTrimStartMs, currentTrimEndMs)
+                                                onCurrentPositionChanged(clampedNewPositionMs)
+                                            },
+                                        )
                                     },
-                        )
+                        ) {
+                            // Inner Box (Visual indicator)
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .width(3.dp) // The visual indicator width
+                                        .fillMaxHeight()
+                                        .background(Color.Yellow)
+                                        .align(Alignment.Center), // Center the visual line
+                            )
+                        }
                     }
                 }
             }
