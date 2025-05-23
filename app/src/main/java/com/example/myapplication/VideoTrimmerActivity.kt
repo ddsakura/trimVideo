@@ -90,7 +90,7 @@ class VideoTrimmerActivity : ComponentActivity() {
 
         // Extract video URI from intent
         intent.getStringExtra(EXTRA_VIDEO_URI)?.let {
-            videoUri = Uri.parse(it)
+            videoUri = it.toUri()
         }
 
         if (videoUri == null) {
